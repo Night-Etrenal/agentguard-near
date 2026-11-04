@@ -1,0 +1,44 @@
+{
+  "name": "agentguard-near",
+  "version": "0.1.0",
+  "description": "AgentGuard: spending-limited NEAR wallet for AI agents (function-call keys + policy vault + counterparty checks)",
+  "main": "index.js",
+  "scripts": {
+    "demo": "bash scripts/demo.sh",
+    "demo:attack": "node demos/attack-injection.js",
+    "demo:happy": "node demos/happy-path.js",
+    "demo:limit": "node demos/over-limit.js",
+    "test": "node tests/checker.test.js && cargo test --manifest-path contracts/policy_vault/Cargo.toml",
+    "test:unit": "cargo test --manifest-path contracts/policy_vault/Cargo.toml",
+    "test:checker": "node tests/checker.test.js",
+    "verify:live": "node scripts/verify-live.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@near-js/accounts": "^2.5.1",
+    "@near-js/crypto": "^2.5.1",
+    "@near-js/keystores": "^2.5.1",
+    "@near-js/keystores-node": "^2.5.1",
+    "@near-js/providers": "^2.5.1",
+    "@near-js/signers": "^2.5.1",
+    "@near-js/transactions": "^2.5.1",
+    "@near-js/types": "^2.5.1",
+    "@near-js/utils": "^2.5.1",
+    "bs58": "^6.0.0",
+    "dotenv": "^18.0.9",
+    "near-api-js": "^7.4.0",
+    "near-seed-phrase": "^0.2.1",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

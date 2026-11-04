@@ -1,0 +1,13 @@
+{
+  "network": "testnet",
+  "rpc": "https://rpc.testnet.near.org",
+  "vault": "nightscoutguard808620.testnet",
+  "owner": "nightscoutguard808620.testnet",
+  "merchant": "nightscoutpay808620.testnet",
+  "scam": "nightscoutscam808620.testnet",
+  "deploy_tx": "7jpuBXRQKVd2F6VPvCeBYx8vq32pL5CQH5XfnpnAyAxE",
+  "fc_key_tx": "GgTqg9zT6M3HTEc5DbdEwitPSZuv3asLF3dBjEkP3YnN",
+  "max_per_tx_near": "0.5",
+  "max_daily_near": "2",
+  "explorer_account": "https://explorer.testnet.near.org/accounts/nightscoutguard808620.testnet"
+}

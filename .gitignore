@@ -1,0 +1,10 @@
+node_modules/
+contracts/policy_vault/target/
+**/*.wasm
+!artifacts/policy_vault.wasm
+.env
+.env.*
+data/journal.json
+.DS_Store
+*.log
+.secrets/
