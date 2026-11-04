@@ -180,6 +180,7 @@ artifacts/policy_vault.wasm
 deployments/testnet.json
 data/blocklist.json
 docs/DEMO_LOG.md
+docs/media/               # demo PNGs for X post
 docs/reviews/             # sol security + terra judge reviews
 docs/SUBMISSION.md
 ```
