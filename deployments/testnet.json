@@ -9,5 +9,8 @@
   "fc_key_tx": "GgTqg9zT6M3HTEc5DbdEwitPSZuv3asLF3dBjEkP3YnN",
   "max_per_tx_near": "0.5",
   "max_daily_near": "2",
-  "explorer_account": "https://explorer.testnet.near.org/accounts/nightscoutguard808620.testnet"
+  "explorer_account": "https://explorer.testnet.near.org/accounts/nightscoutguard808620.testnet",
+  "redeploy_tx": "7g8cE45hnjBPGXchRaRbygbfh9T6GU9D4abdBtB3ftqr",
+  "redeployed_at": "2026-11-04T17:19:57.672Z",
+  "wasm_bytes": 146497
 }

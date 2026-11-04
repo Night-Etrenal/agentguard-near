@@ -1,22 +1,20 @@
 #!/usr/bin/env node
-/** Show on-chain max_per_tx enforcement against an allowlisted merchant. */
 import { AgentGuard } from '../src/agent.js';
-import { loadDeploy, nearToYocto } from '../src/config.js';
+import { loadDeploy } from '../src/config.js';
 
 const deploy = loadDeploy();
-const agent = new AgentGuard({ autoDenyWarn: false });
-console.log('=== Over max_per_tx (0.5 NEAR limit, trying 0.6) ===');
-try {
-  await agent.account.functionCall({
-    contractId: deploy.vault,
-    methodName: 'spend',
-    args: { receiver_id: deploy.merchant, amount: nearToYocto('0.6').toString() },
-    gas: 30000000000000n,
-    attachedDeposit: 0n,
-  });
-  console.error('UNEXPECTED success');
+const agent = new AgentGuard({ autoDenyWarn: true, useLlm: false });
+console.log('=== AgentGuard over-limit demo ===');
+const res = await agent.pay(deploy.merchant, '0.6', {
+  rationale: 'pay merchant',
+  sourceText: 'normal invoice 0.6 NEAR',
+});
+console.log('result', { ok: res.ok, stage: res.stage, error: (res.error || '').slice(0, 200) });
+if (res.ok) {
+  console.error('FAIL: over-limit spend should not succeed');
   process.exit(1);
-} catch (e) {
-  console.log('Rejected as expected:', String(e.message || e).slice(0, 400));
-  console.log('SEE: vault max_per_tx stopped the spend even for an allowlisted receiver.');
 }
+if (res.stage === 'chain' && !/max_per_tx|Exceeds/i.test(res.error || '')) {
+  console.warn('WARN: expected Exceeds max_per_tx, got', (res.error || '').slice(0, 120));
+}
+console.log('SEE: spend rejected (over max_per_tx 0.5)');

@@ -11,7 +11,10 @@
     "test": "node tests/checker.test.js && cargo test --manifest-path contracts/policy_vault/Cargo.toml",
     "test:unit": "cargo test --manifest-path contracts/policy_vault/Cargo.toml",
     "test:checker": "node tests/checker.test.js",
-    "verify:live": "node scripts/verify-live.js"
+    "verify:live": "node scripts/verify-live.js",
+    "policy": "node scripts/compile-policy.js",
+    "smoke:unauthorized": "node scripts/smoke-unauthorized.js",
+    "redeploy": "node scripts/redeploy.js"
   },
   "keywords": [],
   "author": "",

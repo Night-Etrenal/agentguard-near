@@ -2,13 +2,13 @@
  * Counterparty checker for AI agents that pay on NEAR.
  * Returns { decision: 'allow'|'warn'|'block', score, reasons[], signals{} }.
  *
- * Signals (and how we get them):
+ * Signals:
  * 1. Shared blocklist — local curated JSON + on-chain is_blocked view
- * 2. Account existence / age proxy — view_account; storage_usage + code_hash
- * 3. Is contract? — code_hash != "1111...1111" empty hash
- * 4. Recent code change — best-effort: if contract and not previously seen hash (local journal)
- * 5. Prior interactions — local journal of agent→receiver spends
- * 6. Optional LLM reasoner (gpt-6-luna) for ambiguous WARN cases
+ * 2. Account existence / storage — view_account
+ * 3. Is contract? — code_hash != empty
+ * 4. Recent code change — vs approved baseline in journal (not auto-updated on warn)
+ * 5. Prior interactions — local journal
+ * 6. Optional LLM reasoner — escalate only (never clears a warn/block)
  */
 import fs from 'fs';
 import path from 'path';
@@ -20,11 +20,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const JOURNAL = path.join(__dirname, '..', 'data', 'journal.json');
 
 function readJournal() {
-  if (!fs.existsSync(JOURNAL)) return { interactions: {}, codeHashes: {} };
+  if (!fs.existsSync(JOURNAL)) {
+    return { interactions: {}, codeHashes: {}, observedHashes: {} };
+  }
   return JSON.parse(fs.readFileSync(JOURNAL, 'utf8'));
 }
 function writeJournal(j) {
-  fs.writeFileSync(JOURNAL, JSON.stringify(j, null, 2));
+  const tmp = JOURNAL + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(j, null, 2));
+  fs.renameSync(tmp, JOURNAL);
 }
 
 export async function checkCounterparty(receiverId, opts = {}) {
@@ -53,6 +57,8 @@ export async function checkCounterparty(receiverId, opts = {}) {
     }
   } catch (e) {
     signals.onchainBlocked = null;
+    score += 5;
+    reasons.push('on-chain blocklist lookup failed (unknown)');
   }
 
   // 2–3. Account view
@@ -68,22 +74,26 @@ export async function checkCounterparty(receiverId, opts = {}) {
     signals.codeHash = acct.code_hash;
     signals.storageUsage = acct.storage_usage;
     signals.amount = acct.amount;
-    // Brand-new empty EOAs with tiny storage are slightly riskier for first payment
     if (!isContract && Number(acct.storage_usage) <= 182) {
       score += 10;
-      reasons.push('receiver looks like a fresh EOA (minimal storage)');
+      reasons.push('receiver looks like a fresh EOA (minimal storage — heuristic, not age)');
     }
     if (isContract) {
       score += 5;
       reasons.push('receiver is a contract — verify method + upgrade history');
       const journal = readJournal();
-      const prev = journal.codeHashes[receiverId];
-      signals.priorCodeHash = prev || null;
-      if (prev && prev !== acct.code_hash) {
-        score += 40;
-        reasons.push('contract code_hash changed since last observation');
+      const approved = journal.codeHashes[receiverId];
+      const observed = journal.observedHashes?.[receiverId];
+      signals.approvedCodeHash = approved || null;
+      signals.priorObservedHash = observed || null;
+      if (approved && approved !== acct.code_hash) {
+        // Code-change is always at least a warn, independent of prior-payment discounts.
+        score = Math.max(score + 40, 40);
+        reasons.push('contract code_hash changed since approved baseline');
       }
-      journal.codeHashes[receiverId] = acct.code_hash;
+      // Record observation only — do NOT promote to approved baseline here.
+      journal.observedHashes = journal.observedHashes || {};
+      journal.observedHashes[receiverId] = acct.code_hash;
       writeJournal(journal);
     }
   }
@@ -100,7 +110,12 @@ export async function checkCounterparty(receiverId, opts = {}) {
     reasons.push(`prior spends: ${prior.count}`);
   }
 
-  // Optional LLM escalation for mid scores
+  // Floor: a detected code change must remain >= warn even after discounts.
+  if (signals.approvedCodeHash && signals.codeHash && signals.approvedCodeHash !== signals.codeHash) {
+    score = Math.max(score, 40);
+  }
+
+  // Optional LLM — escalate only
   if (opts.useLlm && score >= 40 && score < 80) {
     try {
       const { askLlm } = await import('./llm_bridge.js');
@@ -109,9 +124,12 @@ export async function checkCounterparty(receiverId, opts = {}) {
       if (verdict?.decision === 'block') {
         score = Math.max(score, 80);
         reasons.push(`llm: ${verdict.reason || 'block'}`);
+      } else if (verdict?.decision === 'warn') {
+        score = Math.max(score, 40);
+        reasons.push(`llm: ${verdict.reason || 'warn'}`);
       } else if (verdict?.decision === 'allow') {
-        score = Math.min(score, 39);
-        reasons.push(`llm: ${verdict.reason || 'allow'}`);
+        // Explicitly ignore downgrades.
+        reasons.push('llm suggested allow (ignored — escalate-only)');
       }
     } catch (e) {
       signals.llmError = String(e.message || e);
@@ -125,11 +143,24 @@ export async function checkCounterparty(receiverId, opts = {}) {
   return { decision, score, reasons, signals, receiverId };
 }
 
-export function recordSpend(receiverId, amountYocto) {
+/** Call after a confirmed on-chain success to approve the observed code hash baseline. */
+export function approveCodeHash(receiverId, codeHash) {
+  if (!receiverId || !codeHash) return;
   const journal = readJournal();
-  const cur = journal.interactions[receiverId] || { count: 0, totalYocto: '0' };
+  journal.codeHashes[receiverId] = codeHash;
+  writeJournal(journal);
+}
+
+export function recordSpend(receiverId, amountYocto, txHash = null) {
+  const journal = readJournal();
+  const cur = journal.interactions[receiverId] || { count: 0, totalYocto: '0', txs: [] };
   cur.count += 1;
   cur.totalYocto = (BigInt(cur.totalYocto) + BigInt(amountYocto)).toString();
+  if (txHash) {
+    cur.txs = cur.txs || [];
+    cur.txs.push(txHash);
+    if (cur.txs.length > 20) cur.txs = cur.txs.slice(-20);
+  }
   journal.interactions[receiverId] = cur;
   writeJournal(journal);
 }
