@@ -97,6 +97,19 @@ flowchart TD
 
 Evidence: [`docs/DEMO_LOG.md`](docs/DEMO_LOG.md). Model reviews: [`docs/reviews/`](docs/reviews/).
 
+
+## Demo screenshots
+
+Real terminal captures from `npm run demo` / `npm run smoke:unauthorized` (NEAR testnet):
+
+| File | Caption |
+| --- | --- |
+| [`docs/media/01-attack-blocked.png`](docs/media/01-attack-blocked.png) | Prompt-injection drain attempt blocked by intent firewall, FC-key protocol, and on-chain blocklist |
+| [`docs/media/02-unauthorized-rejected.png`](docs/media/02-unauthorized-rejected.png) | Unrelated account calling `spend` → `Unauthorized agent` |
+| [`docs/media/03-over-limit-rejected.png`](docs/media/03-over-limit-rejected.png) | 0.6 NEAR spend rejected: `Exceeds max_per_tx` |
+| [`docs/media/04-happy-path-settled.png`](docs/media/04-happy-path-settled.png) | Allowlisted 0.05 NEAR spend settled — tx `6K4fJkfARRbbHdXq414yYCzi5KfNaL1Cxo1PrHaApcfA` |
+
+
 ## Optional LLM runtime (`AGENTGUARD_LLM=1`)
 
 | Feature | Module | Without key |
