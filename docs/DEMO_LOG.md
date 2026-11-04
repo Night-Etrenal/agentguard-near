@@ -11,7 +11,7 @@ Network: NEAR testnet. Vault: `nightscoutguard808620.testnet`.
 | Attack: FC key raw Transfer | protocol reject | "access key which allows transaction to apply only one specific action" |
 | Attack: direct `spend` bypass | contract panic | `Receiver blocked` |
 | Over limit 0.6 NEAR (max 0.5) | contract panic | `Exceeds max_per_tx` |
-| Happy path 0.05 NEAR → merchant | success | https://explorer.testnet.near.org/transactions/6mexgJa4zM3wcwXh5tsERu6u3LS2PqRXudDz6JsgM9Um |
+| Happy path 0.05 NEAR → merchant | success | https://explorer.testnet.near.org/transactions/6mexgJa4zM3wcwXh5tsERu6u3LS2PqRXudDz6JsgM9Um and https://explorer.testnet.near.org/transactions/2GFeD4mdaViPHGLUaYEc9caH4bYdyyYSvVPHt5vgqbCC |
 
 ## Reproduce without our keys
 ```bash
